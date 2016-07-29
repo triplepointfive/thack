@@ -21,11 +21,46 @@ class Rect
     @x += x
     @y += y
 
+class Room extends Rect
+  THICKNESS = 0
+
   notCross: ( rect ) ->
-    ( rect.x > @x + @w ) ||
-    ( rect.y > @y + @h ) ||
-    ( rect.x + rect.w < @x ) ||
-    ( rect.y + rect.h < @y )
+    ( rect.x - THICKNESS > @x + @w ) ||
+    ( rect.y - THICKNESS > @y + @h ) ||
+    ( rect.x + rect.w < @x - THICKNESS ) ||
+    ( rect.y + rect.h < @y - THICKNESS )
+
+  pointWithin: ->
+    return [ @x + 1 + rand( @w - 1 ), @y + 1 + rand( @h - 1 ) ]
+
+class Road extends Rect
+  constructor: ( x, y, w, h ) ->
+    super( x, y, w, h )
+    @lined = ( ( x >= w ) && ( y >= h ) ) || ( w >= x ) && ( h >= y )
+
+  horizontalLine: ->
+    # x
+    # |\
+    # .-x
+    if @lined
+      [ Math.min( @x, @w ), Math.max( @y, @h ), Math.abs( @w - @x ) ]
+    # .-x
+    # |/
+    # x
+    else
+      [ Math.min( @x, @w ), Math.min( @y, @h ), Math.abs( @w - @x ) ]
+
+  verticallLine: ->
+    # x
+    # |\
+    # .-x
+    if @lined
+      [ Math.min( @x, @w ), Math.min( @y, @h ), Math.abs( @h - @y ) ]
+    # .-x
+    # |/
+    # x
+    else
+      [ Math.min( @x, @w ), Math.min( @y, @h ), Math.abs( @h - @y ) ]
 
 class Renderer
   constructor: ( display ) ->
@@ -47,8 +82,21 @@ class Renderer
 
       i += 1
 
+  renderRoad: ( rect ) ->
+    colors = @buildColor()
 
-  buildColor: () ->
+    [ x, y, w ] = rect.horizontalLine()
+
+    @display.drawText x, y, "#{ colors }#{ Array( w + 1 ).join( WALL ) }"
+
+    [ x, y, h ] = rect.verticallLine()
+
+    i = 1
+    while i < h
+      @display.drawText x, ( y + i ), "#{ colors }#{ WALL }"
+      i += 1
+
+  buildColor: ->
     # Calculate the foreground color, getting progressively darker
     # and the background color, getting progressively lighter.
     foreground = ROT.Color.toRGB([255 - (@i*20), 255 - (@i*20), 255 - (@i*20)])
@@ -62,21 +110,26 @@ class Renderer
 class DungeonGenerator
   MIN_SIZE = 4
   MAX_SIZE = 10
-  ROOMS_COUNT = 30
+  ROOMS_COUNT = 25
 
   constructor: ->
     rooms = []
 
     i = 0
     while i < ROOMS_COUNT
-      rooms.push generateRoom()
-      i += 1
+     rooms.push generateRoom()
+     i += 1
 
     @rooms = normalize( fuzzifyRooms( rooms ) )
-    # @rooms = [ new Rect( 50, 50, 7, 10 ), new Rect( 58, 50, 6, 6 ), new Rect( 65, 50, 10, 8 ), ]
+    @roads = buildRoads @rooms
 
   generateRoom = ->
-    new Rect( 0, 0, MIN_SIZE + rand( MAX_SIZE - MIN_SIZE ), MIN_SIZE + rand( MAX_SIZE - MIN_SIZE ) )
+    new Room(
+      0,
+      0,
+      MIN_SIZE + rand( MAX_SIZE - MIN_SIZE ),
+      MIN_SIZE + rand( MAX_SIZE - MIN_SIZE )
+    )
 
   fuzzifyRooms = ( rooms ) ->
     pickedRooms = [ rooms.shift() ]
@@ -114,6 +167,44 @@ class DungeonGenerator
     rooms.forEach( ( room ) -> room.move( - minX, - minY ) )
     rooms.filter( ( room ) -> ( room.x + room.w < 100 ) && ( room.y + room.h < 100 ) )
 
+  buildRoads = ( rooms ) ->
+    points = rooms.map( ( room ) -> room.pointWithin() )
+
+    connectedPoints = [ points.shift() ]
+    roads = []
+
+    distance = ( point1, point2 ) ->
+      # TODO: Add class for points.
+      [ x1, y1 ] = point1
+      [ x2, y2 ] = point2
+      # No need to calc square root since it's being used for comparison only.
+      ( x1 - x2 ) ** 2 + ( y1 - y2 ) ** 2
+
+    while points.length
+      currentPoint = points.shift()
+
+      pointToConnect = connectedPoints[ 0 ]
+      minDistance = distance( currentPoint, pointToConnect )
+
+      connectedPoints.forEach ( point ) ->
+        currentDistance = distance( point, currentPoint )
+        if currentDistance < minDistance
+          pointToConnect = point
+          minDistance = currentDistance
+
+      connectedPoints.push currentPoint
+
+      roads.push new Road(
+        currentPoint[ 0 ],
+        currentPoint[ 1 ],
+        pointToConnect[ 0 ],
+        pointToConnect[ 1 ]
+      )
+
+    console.log connectedPoints
+
+    roads
+
 $ ->
   # Check if rot.js can work on this browser
   if !ROT.isSupported()
@@ -132,6 +223,10 @@ $ ->
     render = new Renderer( display )
 
     for room in dungeon.rooms
-
       render.renderRect room
+
+    console.log dungeon.roads
+
+    for road in dungeon.roads
+      render.renderRoad road
 

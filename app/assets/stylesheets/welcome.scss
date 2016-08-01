@@ -1,0 +1,22 @@
+#game-screen {
+  display: inline-block;
+}
+
+#logs-table {
+  display: inline-block;
+  vertical-align: top;
+  border-collapse: collapse;
+
+  td, th {
+    padding: 3px; /* Поля вокруг содержимого таблицы */
+    border: 1px solid black; /* Параметры рамки */
+  }
+
+  .info { color: cyan; }
+  .warning { color: orange; }
+  .danger { color: red; }
+}
+
+.hidden {
+  display: none;
+}

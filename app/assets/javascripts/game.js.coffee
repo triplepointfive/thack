@@ -1,6 +1,8 @@
 WALL = "#"
+MAX_X = 100
+MAX_Y = 100
 
-window.rand = ( max ) ->
+rand = ( max ) ->
   Math.floor( Math.random() * max )
 
 Array.prototype.max = ->
@@ -96,16 +98,94 @@ class Renderer
       @display.drawText x, ( y + i ), "#{ colors }#{ WALL }"
       i += 1
 
+  renderStage: ( stage ) ->
+    colors = @buildColor()
+
+    stage.field.forEach ( row, x ) =>
+      row.forEach ( tile, y ) =>
+        @display.drawText x, y, "#{ colors }#{ stage.at( x, y ).char }"
+
   buildColor: ->
     # Calculate the foreground color, getting progressively darker
     # and the background color, getting progressively lighter.
     foreground = ROT.Color.toRGB([255 - (@i*20), 255 - (@i*20), 255 - (@i*20)])
     background = ROT.Color.toRGB([@i*20, @i*20, @i*20])
+    # foreground = ROT.Color.toRGB([255, 255, 255])
+    # background = ROT.Color.toRGB([255, 255, 255])
 
     @i += 1
 
     # Create the color format specifier.
     "%c{#{ foreground }}%b{#{ background }}"
+
+class Tyle
+  constructor: ( char, foreground, background = [ 0, 0, 0 ] ) ->
+    @char       = char
+    @foreground = foreground
+    @background = background
+
+class window.Stage
+  tiles =
+    wall: new Tyle( '#', [ 255, 255, 255 ] )
+    space: new Tyle( ' ', [ 0, 0, 0 ] )
+
+  at: ( x, y ) ->
+    tiles[ @field[ x ][ y ] ]
+
+  constructor: ( dimX, dimY ) ->
+    @field = Array( dimX )
+
+    i = 0
+    while i < dimX
+      @field[i] = new Array(dimY)
+      j = 0
+      while j < dimY
+        @field[i][j] = 'wall'
+        j++
+      i++
+
+  addRoom: ( room ) ->
+    i = 0
+    while i < room.w
+      j = 0
+      while j < room.h
+        @field[ room.x + i ][ room.y + j ] = "space"
+        j++
+      i++
+
+  addRoad: ( road ) ->
+    [ x, y, w ] = road.horizontalLine()
+
+    i = 1
+    while i < w
+      @field[ x + i ][ y ] = "space"
+      i += 1
+
+    [ x, y, h ] = road.verticallLine()
+
+    j = 1
+    while j < h
+      @field[ x ][ y + j ] = "space"
+      j += 1
+
+class window.Logger
+  block = undefined
+
+  @info: ( message ) ->
+    @withClass 'info', message
+
+  @warning: ( message ) ->
+    @withClass 'warning', message
+
+  @danger: ( message ) ->
+    @withClass 'danger', message
+
+  @withClass: ( classes, message ) ->
+    @get().append( "<tr class='hidden'><td>#{ moment().format( "hh:mm:ss" ) }</td><td class='#{ classes }'>#{ message }</td></tr>" )
+    $( "tr.hidden" ).fadeIn()
+
+  @get: ->
+    block ?= $( "#game-logs" )
 
 class DungeonGenerator
   MIN_SIZE = 4
@@ -117,8 +197,8 @@ class DungeonGenerator
 
     i = 0
     while i < ROOMS_COUNT
-     rooms.push generateRoom()
-     i += 1
+      rooms.push generateRoom()
+      i += 1
 
     @rooms = normalize( fuzzifyRooms( rooms ) )
     @roads = buildRoads @rooms
@@ -162,10 +242,10 @@ class DungeonGenerator
     pickedRooms
 
   normalize = ( rooms ) ->
-    minX = rooms.map( ( room ) -> room.x ).min()
-    minY = rooms.map( ( room ) -> room.y ).min()
+    minX = rooms.map( ( room ) -> room.x ).min() - 1
+    minY = rooms.map( ( room ) -> room.y ).min() - 1
     rooms.forEach( ( room ) -> room.move( - minX, - minY ) )
-    rooms.filter( ( room ) -> ( room.x + room.w < 100 ) && ( room.y + room.h < 100 ) )
+    rooms.filter( ( room ) -> ( room.x + room.w < MAX_X ) && ( room.y + room.h < MAX_Y ) )
 
   buildRoads = ( rooms ) ->
     points = rooms.map( ( room ) -> room.pointWithin() )
@@ -201,8 +281,6 @@ class DungeonGenerator
         pointToConnect[ 1 ]
       )
 
-    console.log connectedPoints
-
     roads
 
 $ ->
@@ -211,22 +289,21 @@ $ ->
     alert("The rot.js library isn't supported by your browser.")
   else
     # Create a display 80 characters wide and 20 characters tall
-    display = new ROT.Display({ width:100, height:100 })
+    display = new ROT.Display width: MAX_X, height: MAX_Y
 
     # Add the container to our HTML page
-    document.body.appendChild( display.getContainer() )
+    $('#game-screen').append( display.getContainer() )
 
     dungeon = new DungeonGenerator
 
-    console.log dungeon.rooms
-
     render = new Renderer( display )
 
-    for room in dungeon.rooms
-      render.renderRect room
+    stage = new Stage( MAX_X, MAX_Y )
 
-    console.log dungeon.roads
+    for room in dungeon.rooms
+      stage.addRoom room
 
     for road in dungeon.roads
-      render.renderRoad road
+      stage.addRoad road
 
+    render.renderStage stage

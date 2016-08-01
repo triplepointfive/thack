@@ -14,4 +14,5 @@
 //= require jquery_ujs
 //= require turbolinks
 //= require rot
+//= require moment
 //= require_tree .

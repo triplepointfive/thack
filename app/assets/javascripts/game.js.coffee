@@ -11,6 +11,20 @@ Array.prototype.max = ->
 Array.prototype.min = ->
   Math.min.apply( Math, this )
 
+twoDimArray = ( dimX, dimY, value ) ->
+  field = Array( dimX )
+
+  i = 0
+  while i < dimX
+    field[i] = new Array(dimY)
+    j = 0
+    while j < dimY
+      field[i][j] = value( i, j )
+      j++
+    i++
+
+  field
+
 class Rect
   constructor: ( x, y, w, h ) ->
     # TODO: Validate?
@@ -67,89 +81,88 @@ class Road extends Rect
 class Renderer
   constructor: ( display ) ->
     @display = display
-    @i = 0
 
-  renderRect: ( rect ) ->
-    colors = @buildColor()
-
-    horizontalLine = Array( rect.w + 1 ).join( WALL )
-
-    @display.drawText rect.x, rect.y, "#{ colors }#{ horizontalLine }"
-    @display.drawText rect.x, ( rect.y + rect.h - 1 ), "#{ colors }#{ horizontalLine }"
-
-    i = 1
-    while i < rect.h - 1
-      @display.drawText rect.x, ( rect.y + i ), "#{ colors }#{ WALL }"
-      @display.drawText ( rect.x + rect.w - 1 ), ( rect.y + i ), "#{ colors }#{ WALL }"
-
-      i += 1
-
-  renderRoad: ( rect ) ->
-    colors = @buildColor()
-
-    [ x, y, w ] = rect.horizontalLine()
-
-    @display.drawText x, y, "#{ colors }#{ Array( w + 1 ).join( WALL ) }"
-
-    [ x, y, h ] = rect.verticallLine()
-
-    i = 1
-    while i < h
-      @display.drawText x, ( y + i ), "#{ colors }#{ WALL }"
-      i += 1
-
-  renderStage: ( stage ) ->
-    colors = @buildColor()
+  renderStage: ( stage, walker ) ->
+    visionMask = walker.visionMask()
 
     stage.field.forEach ( row, x ) =>
       row.forEach ( tile, y ) =>
-        @display.drawText x, y, "#{ colors }#{ stage.at( x, y ).char }"
+        if visionMask[ x ][ y ]
+          tile = stage.at( x, y ).printTile()
+          colors = @buildColor( tile.foreground, tile.background )
+          @display.drawText x, y, "#{ colors }#{ tile.char }"
 
-  buildColor: ->
-    # Calculate the foreground color, getting progressively darker
-    # and the background color, getting progressively lighter.
-    foreground = ROT.Color.toRGB([255 - (@i*20), 255 - (@i*20), 255 - (@i*20)])
-    background = ROT.Color.toRGB([@i*20, @i*20, @i*20])
-    # foreground = ROT.Color.toRGB([255, 255, 255])
-    # background = ROT.Color.toRGB([255, 255, 255])
+  buildColor: ( foreground, background )->
+    "%c{#{ ROT.Color.toRGB( foreground ) }}" +
+    "%b{#{ ROT.Color.toRGB( background ) }}"
 
-    @i += 1
-
-    # Create the color format specifier.
-    "%c{#{ foreground }}%b{#{ background }}"
-
-class Tyle
-  constructor: ( char, foreground, background = [ 0, 0, 0 ] ) ->
+class TileType
+  constructor: ( char, foreground, background, opts = {} ) ->
     @char       = char
     @foreground = foreground
     @background = background
 
-class window.Stage
-  tiles =
-    wall: new Tyle( '#', [ 255, 255, 255 ] )
-    space: new Tyle( ' ', [ 0, 0, 0 ] )
+    @visible    = opts.visible ? true
+    @tangible   = opts.tangible ? true
 
-  at: ( x, y ) ->
-    tiles[ @field[ x ][ y ] ]
+class Walker
+  constructor: ( x, y ) ->
+    @x = x
+    @y = y
 
-  constructor: ( dimX, dimY ) ->
-    @field = Array( dimX )
+  visionMask: ->
+    mask = twoDimArray MAX_X, MAX_Y, -> false
 
-    i = 0
-    while i < dimX
-      @field[i] = new Array(dimY)
-      j = 0
-      while j < dimY
-        @field[i][j] = 'wall'
+    i = Math.max( @x - 10, 0 )
+    while i < Math.min( @x + 10, MAX_X )
+      j = Math.max( @y - 10, 0 )
+      while j < Math.min( @y + 10, MAX_Y )
+        mask[ i ][ j ] = true
         j++
       i++
+    mask
+
+class Type
+  white = [ 0, 0, 0 ]
+  black = [ 255, 255, 255 ]
+  red   = [ 255, 0, 0 ]
+  green = [ 0, 255, 0 ]
+  blue  = [ 0, 0, 255 ]
+
+  tileTypes =
+    wall:     new TileType( "#", white, black, visible: true,  tangible: true  )
+    space:    new TileType( " ", white, black, visible: false, tangible: false )
+    unknown:  new TileType( " ", white, black, visible: false, tangible: true  )
+
+    humanoid: new TileType( "@", white, black, visible: true,  tangible: true  )
+
+  constructor: ( type, opts = {} ) ->
+    @type = type
+
+  printTile: ->
+    tileTypes[ @type ]
+
+class window.Stage
+  at: ( x, y ) ->
+    @field[ x ][ y ]
+
+  see: ( x, y ) ->
+
+  newWall = ->
+    new Type( 'wall' )
+
+  newSpace = ->
+    new Type( 'space' )
+
+  constructor: ( dimX, dimY ) ->
+    @field = twoDimArray( dimX, dimY, -> newWall() )
 
   addRoom: ( room ) ->
     i = 0
     while i < room.w
       j = 0
       while j < room.h
-        @field[ room.x + i ][ room.y + j ] = "space"
+        @field[ room.x + i ][ room.y + j ] = newSpace()
         j++
       i++
 
@@ -158,14 +171,14 @@ class window.Stage
 
     i = 1
     while i < w
-      @field[ x + i ][ y ] = "space"
+      @field[ x + i ][ y ] = newSpace()
       i += 1
 
     [ x, y, h ] = road.verticallLine()
 
     j = 1
     while j < h
-      @field[ x ][ y + j ] = "space"
+      @field[ x ][ y + j ] = newSpace()
       j += 1
 
 class window.Logger
@@ -181,7 +194,12 @@ class window.Logger
     @withClass 'danger', message
 
   @withClass: ( classes, message ) ->
-    @get().append( "<tr class='hidden'><td>#{ moment().format( "hh:mm:ss" ) }</td><td class='#{ classes }'>#{ message }</td></tr>" )
+    @get().append(
+      "<tr class='hidden'>
+        <td>#{ moment().format( "hh:mm:ss" ) }</td>
+        <td class='#{ classes }'>#{ message }</td>
+        </tr>"
+    )
     $( "tr.hidden" ).fadeIn()
 
   @get: ->
@@ -245,7 +263,8 @@ class DungeonGenerator
     minX = rooms.map( ( room ) -> room.x ).min() - 1
     minY = rooms.map( ( room ) -> room.y ).min() - 1
     rooms.forEach( ( room ) -> room.move( - minX, - minY ) )
-    rooms.filter( ( room ) -> ( room.x + room.w < MAX_X ) && ( room.y + room.h < MAX_Y ) )
+    rooms.filter ( room ) ->
+      ( room.x + room.w < MAX_X ) && ( room.y + room.h < MAX_Y )
 
   buildRoads = ( rooms ) ->
     points = rooms.map( ( room ) -> room.pointWithin() )
@@ -300,10 +319,17 @@ $ ->
 
     stage = new Stage( MAX_X, MAX_Y )
 
+    walker = new Walker( 20, 20 )
+
     for room in dungeon.rooms
       stage.addRoom room
 
     for road in dungeon.roads
       stage.addRoad road
 
-    render.renderStage stage
+    setInterval ->
+      walker.x++
+      walker.y++
+
+      render.renderStage stage, walker
+    , 100

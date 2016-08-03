@@ -25,6 +25,9 @@ twoDimArray = ( dimX, dimY, value ) ->
 
   field
 
+succ = ( c ) ->
+  String.fromCharCode( c.charCodeAt( 0 ) + 1 )
+
 class Rect
   constructor: ( x, y, w, h ) ->
     # TODO: Validate?
@@ -88,9 +91,11 @@ class Renderer
     stage.field.forEach ( row, x ) =>
       row.forEach ( tile, y ) =>
         if visionMask[ x ][ y ]
-          tile = stage.at( x, y ).printTile()
-          colors = @buildColor( tile.foreground, tile.background )
-          @display.drawText x, y, "#{ colors }#{ tile.char }"
+          @renderTile x, y, stage.at( x, y ).printTile()
+
+  renderTile: ( x, y, tile ) ->
+    colors = @buildColor( tile.foreground, tile.background )
+    @display.drawText x, y, "#{ colors }#{ tile.char }"
 
   buildColor: ( foreground, background )->
     "%c{#{ ROT.Color.toRGB( foreground ) }}" +
@@ -105,42 +110,122 @@ class TileType
     @visible    = opts.visible ? true
     @tangible   = opts.tangible ? true
 
-class Walker
+class window.Patrol
   constructor: ( x, y ) ->
     @x = x
     @y = y
 
+    @i = 'a'
+
+    @step = 0
+    @graph = new graphlib.Graph()
+
+    @addNode( @x, @y, false )
+    @lastNodeVisit = {}
+
+    @markNodeVisited @currentNodeID
+
+  act: ( stage ) ->
+    @step++
+
+    if @targetNodeID
+      if @reachedNode( @targetNodeID )
+        Logger.warning( "Got to the target '#{ @targetNodeID }'" )
+        @currentNodeID = @targetNodeID
+        @markNodeVisited @currentNodeID
+
+        @pickUpNewTarget()
+    else
+      @pickUpNewTarget()
+
+    @moveToTarget()
+
+  moveToTarget: ->
+    pos = @graph.node @targetNodeID
+    if pos.x != @x
+      @x += if pos.x > @x then 1 else -1
+    else if pos.y != @y
+      @y += if pos.y > @y then 1 else -1
+    else
+      @x += rand( 3 ) - 1
+      @y += rand( 3 ) - 1
+
+  reachedNode: ( nodeID ) ->
+    pos = @graph.node nodeID
+    ( pos.x == @x ) && ( pos.y == @y )
+
+  pickUpNewTarget: ->
+    Logger.info( "Going from '#{ @currentNodeID }': #{ JSON.stringify @graph.node( @currentNodeID ) }" )
+
+    seenLastID = @currentNodeID
+    seenLastStep = @lastNodeVisit[ seenLastID ]
+
+    @graph.neighbors( @currentNodeID ).forEach ( nodeID ) =>
+      if seenLastStep > ( @lastNodeVisit[ nodeID ] || 0 )
+        seenLastID = nodeID
+        seenLastStep = @lastNodeVisit[ seenLastID ]
+
+    Logger.warning( "To '#{ seenLastID }': #{ JSON.stringify @graph.node( seenLastID ) }" )
+    @targetNodeID = seenLastID
+
+  markNodeVisited: ( nodeID ) ->
+    @lastNodeVisit[ nodeID ] = @step
+
+  addNode: ( x, y, withEdge = true ) ->
+    @graph.setNode( @i, { x: x, y: y } )
+    @graph.setEdge( @currentNodeID, @i ) if withEdge
+    @currentNodeID = @i
+    @i = succ @i
+
+class window.Walker
+  constructor: ( x, y ) ->
+    @x = x
+    @y = y
+    @tile = new Type( 'humanoid' )
+    @p = new Patrol( x, y )
+    @p.addNode( 30, 20 )
+    @p.addNode( 1, 20 )
+    @p.addNode( 1, 1 )
+    @p.currentNodeID = 'a'
+
   visionMask: ->
     mask = twoDimArray MAX_X, MAX_Y, -> false
 
-    i = Math.max( @x - 10, 0 )
-    while i < Math.min( @x + 10, MAX_X )
-      j = Math.max( @y - 10, 0 )
-      while j < Math.min( @y + 10, MAX_Y )
+    i = Math.max( @p.x - 10, 0 )
+    while i < Math.min( @p.x + 10, MAX_X )
+      j = Math.max( @p.y - 10, 0 )
+      while j < Math.min( @p.y + 10, MAX_Y )
         mask[ i ][ j ] = true
         j++
       i++
     mask
 
-class Type
-  white = [ 0, 0, 0 ]
-  black = [ 255, 255, 255 ]
+class window.Type
+  white = [ 255, 255, 255 ]
+  black = [ 0, 0, 0 ]
   red   = [ 255, 0, 0 ]
   green = [ 0, 255, 0 ]
   blue  = [ 0, 0, 255 ]
 
   tileTypes =
-    wall:     new TileType( "#", white, black, visible: true,  tangible: true  )
-    space:    new TileType( " ", white, black, visible: false, tangible: false )
-    unknown:  new TileType( " ", white, black, visible: false, tangible: true  )
-
-    humanoid: new TileType( "@", white, black, visible: true,  tangible: true  )
+    wall:     new TileType( "#", black, white, visible: true,  tangible: true  )
+    space:    new TileType( " ", black, white, visible: false, tangible: false )
+    unknown:  new TileType( " ", black, white, visible: false, tangible: true  )
+    humanoid: new TileType( "@", green, black, visible: true,  tangible: true  )
 
   constructor: ( type, opts = {} ) ->
     @type = type
 
+  tangible: ->
+    @printTile().tangible
+
   printTile: ->
     tileTypes[ @type ]
+
+class LocationNode
+  constructor: ( x, y ) ->
+    @x = x
+    @y = y
 
 class window.Stage
   at: ( x, y ) ->
@@ -157,6 +242,18 @@ class window.Stage
   constructor: ( dimX, dimY ) ->
     @field = twoDimArray( dimX, dimY, -> newWall() )
 
+  addVerticalLine: ( x, y, h ) ->
+    j = 0
+    while j < h
+      @field[ x ][ y + j ] = newSpace()
+      j += 1
+
+  addHorizontalLine: ( x, y, w ) ->
+    i = 0
+    while i < w
+      @field[ x + i ][ y ] = newSpace()
+      i += 1
+
   addRoom: ( room ) ->
     i = 0
     while i < room.w
@@ -168,18 +265,10 @@ class window.Stage
 
   addRoad: ( road ) ->
     [ x, y, w ] = road.horizontalLine()
-
-    i = 1
-    while i < w
-      @field[ x + i ][ y ] = newSpace()
-      i += 1
+    addHorizontalLine x, y, w
 
     [ x, y, h ] = road.verticallLine()
-
-    j = 1
-    while j < h
-      @field[ x ][ y + j ] = newSpace()
-      j += 1
+    addVerticalLine x, y, h
 
 class window.Logger
   block = undefined
@@ -313,23 +402,37 @@ $ ->
     # Add the container to our HTML page
     $('#game-screen').append( display.getContainer() )
 
-    dungeon = new DungeonGenerator
+    # dungeon = new DungeonGenerator
 
     render = new Renderer( display )
 
     stage = new Stage( MAX_X, MAX_Y )
 
-    walker = new Walker( 20, 20 )
+    stage.addVerticalLine 1, 1, 19
+    stage.addHorizontalLine 1, 20, 30
+    stage.addVerticalLine 30, 1, 20
 
-    for room in dungeon.rooms
-      stage.addRoom room
+    # for room in dungeon.rooms
+      # stage.addRoom room
 
-    for road in dungeon.roads
-      stage.addRoad road
+    # for road in dungeon.roads
+      # stage.addRoad road
+
+    freeSpot = ->
+      for row, i in stage.field
+        for v, j in row
+          unless v.tangible()
+            return [ i, j ]
+
+    [ x, y ] = freeSpot()
+
+    walker = new Walker( 30, 1 )
+
+    console.log walker
 
     setInterval ->
-      walker.x++
-      walker.y++
-
+      display.clear()
       render.renderStage stage, walker
+      render.renderTile walker.p.x, walker.p.y, walker.tile.printTile()
+      walker.p.act()
     , 100

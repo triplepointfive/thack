@@ -15,4 +15,5 @@
 //= require turbolinks
 //= require rot
 //= require moment
+//= require graphlib.min
 //= require_tree .

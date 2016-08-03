@@ -16,4 +16,18 @@
 //= require rot
 //= require moment
 //= require graphlib.min
+//= require utils
 //= require_tree .
+
+// interface Array< T > {
+//   max: () => number;
+//   min: () => number;
+// }
+//
+// Array.prototype.max = function(): number {
+//   return Math.max.apply( Math, this );
+// }
+//
+// Array.prototype.min = function(): number {
+//   return Math.min.apply( Math, this );
+// }

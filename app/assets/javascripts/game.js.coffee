@@ -1,44 +1,11 @@
-WALL = "#"
-MAX_X = 100
-MAX_Y = 100
-
-rand = ( max ) ->
-  Math.floor( Math.random() * max )
-
 Array.prototype.max = ->
   Math.max.apply( Math, this )
 
 Array.prototype.min = ->
   Math.min.apply( Math, this )
 
-twoDimArray = ( dimX, dimY, value ) ->
-  field = Array( dimX )
-
-  i = 0
-  while i < dimX
-    field[i] = new Array(dimY)
-    j = 0
-    while j < dimY
-      field[i][j] = value( i, j )
-      j++
-    i++
-
-  field
-
 succ = ( c ) ->
   String.fromCharCode( c.charCodeAt( 0 ) + 1 )
-
-class Rect
-  constructor: ( x, y, w, h ) ->
-    # TODO: Validate?
-    @x = x
-    @y = y
-    @w = w
-    @h = h
-
-  move: ( x, y ) ->
-    @x += x
-    @y += y
 
 class Room extends Rect
   THICKNESS = 0

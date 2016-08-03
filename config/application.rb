@@ -13,3 +13,5 @@ module Thack
     # -- all .rb files in that directory are automatically loaded.
   end
 end
+
+Typescript::Rails::Compiler.default_options = [ '--target', 'ES5', '--noImplicitAny', '--module', 'commonjs' ]

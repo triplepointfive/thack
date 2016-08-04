@@ -1,7 +1,9 @@
 {
     "files": [
         "src/main.ts",
-        "src/utils.ts"
+        "src/javascript/utils.ts",
+        "src/javascript/logger.ts",
+        "src/javascript/generators/dungeon.ts"
     ],
     "compilerOptions": {
         "noImplicitAny": true,

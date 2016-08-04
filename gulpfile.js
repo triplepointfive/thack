@@ -5,7 +5,7 @@ var watchify = require("watchify");
 var tsify = require("tsify");
 var gutil = require("gulp-util");
 var paths = {
-  pages: ["src/*.html"]
+  pages: ["src/*.html", "vendor/*.js"]
 };
 
 var watchedBrowserify = watchify(browserify({
@@ -13,7 +13,9 @@ var watchedBrowserify = watchify(browserify({
   debug: true,
   entries: [
     "src/main.ts",
+    "src/javascript/game.ts",
     "src/javascript/utils.ts",
+    "src/javascript/logger.ts",
     "src/javascript/generators/dungeon.ts"
   ],
   cache: {},

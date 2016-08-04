@@ -18,10 +18,10 @@ export class Rect {
   }
 }
 
-const MAX_X: number = 100
-const MAX_Y: number = 100
+export const MAX_X: number = 100
+export const MAX_Y: number = 100
 
-const succ = function ( c: string ) {
+export const succ = function ( c: string ) {
   return String.fromCharCode( c.charCodeAt( 0 ) + 1 );
 }
 
@@ -29,7 +29,7 @@ export const rand = function ( max: number ): number {
   return Math.floor( Math.random() * max );
 }
 
-const twoDimArray = function ( dimX: number, dimY: number, value: ( x: number, y: number ) => any ): Array<Array<any>> {
+export const twoDimArray = function ( dimX: number, dimY: number, value: ( x: number, y: number ) => any ): Array<Array<any>> {
   let field = Array( dimX );
 
   let i = 0;
@@ -44,4 +44,17 @@ const twoDimArray = function ( dimX: number, dimY: number, value: ( x: number, y
   }
 
   return field;
+}
+
+export const max = function( list: Array< number > ): number {
+  return Math.max.apply( Math, list );
+}
+
+export const min = function( list: Array< number > ): number {
+  return Math.min.apply( Math, list );
+}
+
+export interface Point {
+  x: number,
+  y: number
 }

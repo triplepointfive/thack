@@ -16,6 +16,7 @@ var watchedBrowserify = watchify(browserify({
     "src/javascript/game.ts",
     "src/javascript/utils.ts",
     "src/javascript/logger.ts",
+    "src/javascript/generators/drawn.ts",
     "src/javascript/generators/dungeon.ts"
   ],
   cache: {},

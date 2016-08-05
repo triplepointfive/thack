@@ -23,7 +23,7 @@ export class Renderer {
   constructor( private display: any ) {  }
 
   renderStage( stage: Stage, walker: any ) {
-    const visionMask: Array< Array< boolean > > = walker.visionMask();
+    const visionMask: Array< Array< boolean > > = walker.visionMask( stage );
 
     stage.field.forEach( ( row: Array< Type >, x: number ) => {
       row.forEach( ( tile: Type, y: number ) => {
@@ -50,18 +50,18 @@ const red:   RGBColor = [ 255,   0,   0 ];
 const green: RGBColor = [   0, 255,   0 ];
 const blue:  RGBColor = [   0,   0, 255 ];
 
-enum TileType {
+export enum TileType {
   wall,
   space,
   unknown,
   humanoid
 }
 
-class Type {
+export class Type {
   public static get tileTypes(): { [ key: string ]: DisplayTile } {
     return {
       [ TileType.wall ]:     new DisplayTile( "#", black, white, { visible: true,  tangible: true }  ),
-      [ TileType.space ]:    new DisplayTile( " ", black, white, { visible: false, tangible: false } ),
+      [ TileType.space ]:    new DisplayTile( ".", white, black, { visible: true, tangible: false } ),
       [ TileType.unknown ]:  new DisplayTile( " ", black, white, { visible: false, tangible: true }  ),
       [ TileType.humanoid ]: new DisplayTile( "@", green, black, { visible: true,  tangible: true }  )
     }
@@ -105,7 +105,6 @@ class Patrol {
 
     if ( this.targetNodeID ) {
       if ( this.reachedNode( this.targetNodeID ) ) {
-        // Logger.warning( "Got to the target '#{ this.targetNodeID }'" )
         this.currentNodeID = this.targetNodeID;
         this.markNodeVisited( this.currentNodeID );
 
@@ -136,8 +135,6 @@ class Patrol {
   }
 
   pickUpNewTarget(): void {
-    // Logger.info( "Going from '#{ this.currentNodeID }': #{ JSON.stringify this.graph.node( this.currentNodeID ) }" )
-
     let seenLastID: NodeID = this.currentNodeID;
     let seenLastStep: number = this.lastNodeVisit[ seenLastID ];
 
@@ -148,7 +145,6 @@ class Patrol {
       }
     )
 
-    // Logger.warning( "To '#{ seenLastID }': #{ JSON.stringify this.graph.node( seenLastID ) }" )
     this.targetNodeID = seenLastID
   }
 
@@ -168,29 +164,68 @@ class Patrol {
 
 export class Walker {
   tile: Type;
-  p: Patrol;
+  private p1: Patrol;
 
   constructor( public x: number, public y: number ) {
     this.tile = new Type( TileType.humanoid );
-    this.p = new Patrol( x, y );
-    this.p.addNode( 30, 20 );
-    this.p.addNode( 1, 20 );
-    this.p.addNode( 1, 1 );
-    this.p.currentNodeID = 'a';
+    this.p1 = new Patrol( x, y );
+    this.p1.addNode( 1, 3 );
+    this.p1.addNode( 20, 3 );
+    this.p1.addNode( 20, 7 );
+    this.p1.addNode( 12, 7 );
+    this.p1.addNode( 12, 3 );
+    this.p1.currentNodeID = 'a';
   }
 
-  visionMask(): Array< Array< boolean> > {
-    let mask = twoDimArray( MAX_X, MAX_Y, () => { false } );
+  act(): void {
+    this.p1.act()
+    this.x = this.p1.x
+    this.y = this.p1.y
+  }
 
-    let i: number = Math.max( this.p.x - 10, 0 )
-    while( i < Math.min( this.p.x + 10, MAX_X ) ) {
-      let j = Math.max( this.p.y - 10, 0 );
-      while( j < Math.min( this.p.y + 10, MAX_Y ) ) {
-        mask[ i ][ j ] = true;
-        j++;
+
+  visionMask( stage: Stage ): Array< Array< boolean> > {
+    let mask = twoDimArray( MAX_X, MAX_Y, () => { return false } );
+
+    /* Los calculation */
+    const los = ( x0: number,  y0: number,  x1: number,  y1: number ) => {
+      const dx = x1 - x0
+      const dy = y1 - y0
+      const sx = x0 < x1 ? 1 : -1
+      const sy = y0 < y1 ? 1 : -1
+
+      // sx and sy are switches that enable us to compute the LOS in a single quarter of x/y plan
+      let xnext = x0;
+      let ynext = y0;
+
+      const denom = Math.sqrt(dx * dx + dy * dy);
+
+      const dist = 0.5 * denom
+
+      while (xnext != x1 || ynext != y1) {
+        if ( stage.field[ xnext ][ ynext ].tangible() ) {
+          mask[ xnext ][ ynext ] = true
+          return;
+        }
+
+        if ( Math.abs( dy * ( xnext - x0 + sx ) - dx * ( ynext - y0 ) ) < dist ) {
+          xnext += sx
+        } else if ( Math.abs( dy * ( xnext - x0 ) - dx * ( ynext - y0 + sy ) ) < dist ) {
+          ynext += sy
+        } else {
+          xnext += sx
+          ynext += sy
+        }
       }
-      i++
+
+      mask[ x1 ][ y1 ] = true
     }
+
+    const radius = 10;
+    for ( let i = -radius; i <= radius; i++ )
+      for ( let j = -radius; j <= radius; j++ )
+        if ( i * i + j * j < radius * radius )
+          los( this.x, this.y, this.x + i, this.y + j )
 
     return mask;
   }
@@ -207,8 +242,8 @@ const newSpace = function(): Type {
 export class Stage {
   field: Array< Array< Type > >;
 
-  constructor( dimX: number, dimY: number ) {
-    this.field = twoDimArray( dimX, dimY, newWall )
+  constructor( dimX: number, dimY: number, baseBlock: ( () => Type ) = newWall ) {
+    this.field = twoDimArray( dimX, dimY, baseBlock )
   }
 
   at( x: number, y: number ): Type {

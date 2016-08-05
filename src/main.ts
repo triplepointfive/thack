@@ -1,6 +1,8 @@
 import { MAX_X, MAX_Y, Rect } from "./javascript/utils";
 import { Walker, Renderer, Stage } from "./javascript/game";
 
+import * as DrawnGenerator from "./javascript/generators/drawn";
+
 $(function() {
   if (!ROT.isSupported()) {
     alert("The rot.js library isn't supported by your browser.");
@@ -15,17 +17,22 @@ $(function() {
 
     const render = new Renderer( display )
 
-    let stage = new Stage( MAX_X, MAX_Y )
-
-    stage.addVerticalLine( 1, 1, 19)
-    stage.addHorizontalLine( 1, 20, 30)
-    stage.addVerticalLine( 30, 1, 20)
-
-    // for room in dungeon.rooms
-      // stage.addRoom room
-
-    // for road in dungeon.roads
-      // stage.addRoad road
+    let stage: Stage = DrawnGenerator.generate(
+      MAX_X,
+      MAX_Y,
+      [
+        "########",
+        "#......#         #########",
+        "#......###########.......#",
+        "#......'.........'.......#",
+        "#......#####'#####.......#",
+        "#### ###   #.#   ###'#####",
+        " #....#    #.#####.....#",
+        " #....#    #..... .....#",
+        " #....#    #######.....#",
+        " ######          #######"
+      ]
+    )
 
     const freeSpot = function( stage: Stage ) {
       for( let i = 0; i < stage.field.length; i++ ) {
@@ -39,13 +46,13 @@ $(function() {
 
     let [ x, y ] = freeSpot( stage )
 
-    let walker = new Walker( 30, 1 )
+    let walker = new Walker( 1, 1 )
 
     setInterval( () => {
       display.clear()
       render.renderStage( stage, walker)
-      render.renderTile(  walker.p.x, walker.p.y, walker.tile.printTile() )
-      walker.p.act()
-    }, 100 )
+      render.renderTile(  walker.x, walker.y, walker.tile.printTile() )
+      walker.act()
+    }, 500 )
   }
 });

@@ -57,15 +57,15 @@ const MIN_SIZE: number = 4;
 const MAX_SIZE: number = 10;
 const ROOMS_COUNT: number = 25;
 
-class DungeonGenerator {
+export class DungeonGenerator {
   rooms: Array< Room >;
   roads: Array< Road >;
 
   constructor() {
-    let rooms = []
+    let rooms: Array< Room > = []
 
     let i = 0
-    while( i < ROOMS_COUNT ) {
+    while ( i < ROOMS_COUNT ) {
       rooms.push( this.generateRoom() );
       i += 1
     }
@@ -133,7 +133,7 @@ class DungeonGenerator {
     })
   }
 
-  private buildRoads( rooms: Array< Room > ) {
+  private buildRoads( rooms: Array< Room > ): Array< Road > {
     let points: Array< Point > = rooms.map( ( room ) => { return room.pointWithin() } );
 
     let connectedPoints: Array< Point > = [ points.shift() ];
@@ -161,10 +161,10 @@ class DungeonGenerator {
       connectedPoints.push( currentPoint )
 
       roads.push( new Road(
-        currentPoint[ 0 ],
-        currentPoint[ 1 ],
-        pointToConnect[ 0 ],
-        pointToConnect[ 1 ]
+        currentPoint.x,
+        currentPoint.y,
+        pointToConnect.x,
+        pointToConnect.y
       ))
     }
 

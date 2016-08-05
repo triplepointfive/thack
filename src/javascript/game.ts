@@ -80,6 +80,90 @@ export class Type {
 
 type NodeID = string;
 
+class RandomWalking {
+  direction: number;
+
+  constructor( public x: number, public y: number ) { this.randomDirection() }
+
+  act( stage: Stage, walker: Walker ): void {
+    switch( this.direction ) {
+      // Up
+      case 0:
+        if ( stage.at( this.x, this.y - 1 ).tangible() ) {
+          this.randomDirection();
+        } else {
+          this.y--
+        }
+        break;
+      // Down
+      case 1:
+        if ( stage.at( this.x, this.y + 1 ).tangible() ) {
+          this.randomDirection();
+        } else {
+          this.y++
+        }
+        break;
+      // Left
+      case 2:
+        if ( stage.at( this.x - 1, this.y ).tangible() ) {
+          this.randomDirection();
+        } else {
+          this.x--
+        }
+        break;
+      // Right
+      case 3:
+        if ( stage.at( this.x + 1, this.y ).tangible() ) {
+          this.randomDirection();
+        } else {
+          this.x++
+        }
+      default:
+        break;
+    }
+
+    this.curiosity( stage )
+  }
+
+  // Looks for doorways, would anyone pass them?
+  curiosity( stage: Stage ): void {
+    let p1: boolean, p2: boolean, p3: boolean,
+        p4: boolean,              p6: boolean,
+        p7: boolean, p8: boolean, p9: boolean;
+
+    p1 = stage.at( this.x - 1, this.y - 1 ).tangible()
+    p2 = stage.at( this.x    , this.y - 1 ).tangible()
+    p3 = stage.at( this.x + 1, this.y - 1 ).tangible()
+    p4 = stage.at( this.x - 1, this.y     ).tangible()
+    p6 = stage.at( this.x + 1, this.y     ).tangible()
+    p7 = stage.at( this.x - 1, this.y + 1 ).tangible()
+    p8 = stage.at( this.x    , this.y + 1 ).tangible()
+    p9 = stage.at( this.x + 1, this.y + 1 ).tangible()
+
+    if ( p1 && p3 && !p2 && this.horizontal() ) {
+      // Up
+      this.direction = 0
+    } else if ( p7 && p9 && !p8 && this.horizontal() ) {
+      // Down
+      this.direction = 1
+    } else if ( p1 && p7 && !p4 && !this.horizontal() ) {
+      // Left
+      this.direction = 2
+    } else if ( p3 && p9 && !p6 && !this.horizontal() ) {
+      // Right
+      this.direction = 3
+    }
+  }
+
+  horizontal(): boolean {
+    return this.direction == 2 || this.direction == 3;
+  }
+
+  randomDirection(): void {
+    this.direction = rand( 4 );
+  }
+}
+
 class Patrol {
   i: NodeID;
   step: number;
@@ -164,25 +248,25 @@ class Patrol {
 
 export class Walker {
   tile: Type;
-  private p1: Patrol;
+  private p1: RandomWalking;
 
   constructor( public x: number, public y: number ) {
     this.tile = new Type( TileType.humanoid );
-    this.p1 = new Patrol( x, y );
-    this.p1.addNode( 1, 3 );
-    this.p1.addNode( 20, 3 );
-    this.p1.addNode( 20, 7 );
-    this.p1.addNode( 12, 7 );
-    this.p1.addNode( 12, 3 );
-    this.p1.currentNodeID = 'a';
+    this.p1 = new RandomWalking( x, y );
+    // this.p1 = new Patrol( x, y );
+    // this.p1.addNode( 1, 3 );
+    // this.p1.addNode( 20, 3 );
+    // this.p1.addNode( 20, 7 );
+    // this.p1.addNode( 12, 7 );
+    // this.p1.addNode( 12, 3 );
+    // this.p1.currentNodeID = 'a';
   }
 
-  act(): void {
-    this.p1.act()
+  act( stage: Stage ): void {
+    this.p1.act( stage, this )
     this.x = this.p1.x
     this.y = this.p1.y
   }
-
 
   visionMask( stage: Stage ): Array< Array< boolean> > {
     let mask = twoDimArray( MAX_X, MAX_Y, () => { return false } );

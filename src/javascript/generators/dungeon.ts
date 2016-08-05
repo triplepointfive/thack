@@ -1,4 +1,5 @@
-import { MAX_X, MAX_Y, Rect, Point, rand, min, max } from "../utils"
+import { Rect, Point, rand, min, max } from "../utils"
+import { Stage } from "../game"
 
 const THICKNESS = 0;
 
@@ -57,11 +58,25 @@ const MIN_SIZE: number = 4;
 const MAX_SIZE: number = 10;
 const ROOMS_COUNT: number = 25;
 
-export class DungeonGenerator {
+export const generate = function ( dimX: number, dimY: number ): Stage {
+  const dungeon = new DungeonGenerator( dimX, dimY )
+
+  let stage = new Stage( dimX, dimY )
+
+  for ( let i = 0; i < dungeon.rooms.length; i++ )
+    stage.addRoom( dungeon.rooms[ i ] )
+
+  for ( let i = 0; i < dungeon.roads.length; i++ )
+    stage.addRoad( dungeon.roads[ i ] )
+
+  return stage;
+}
+
+class DungeonGenerator {
   rooms: Array< Room >;
   roads: Array< Road >;
 
-  constructor() {
+  constructor( protected maxX: number, protected maxY: number ) {
     let rooms: Array< Room > = []
 
     let i = 0
@@ -129,7 +144,7 @@ export class DungeonGenerator {
     rooms.forEach( ( room ) => { room.move( - minX, - minY ) } );
 
     return rooms.filter( ( room: Room ) => {
-      return ( room.x + room.w < MAX_X ) && ( room.y + room.h < MAX_Y );
+      return ( room.x + room.w < this.maxX ) && ( room.y + room.h < this.maxY );
     })
   }
 

@@ -26,8 +26,9 @@
         ],
         "semicolon": [
             true,
-            "always"
+            "never"
         ],
+        "typedef": [true, "call-signature", "parameter", "member-variable-declaration"],
         "triple-equals": [
             true,
             "allow-null-check"

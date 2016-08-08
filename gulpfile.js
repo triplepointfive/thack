@@ -35,6 +35,28 @@ function bundle() {
     .pipe(gulp.dest("dist"));
 }
 
+var watchedTestBrowserify = watchify(browserify({
+  basedir: ".",
+  debug: true,
+  entries: [
+    "spec/1st.spec.ts"
+  ],
+  cache: {},
+  packageCache: {}
+}).plugin(tsify));
+
+function testBundle() {
+  return watchedTestBrowserify
+    .bundle()
+    .pipe(source("spec.js"))
+    .pipe(gulp.dest("dist"));
+}
+
 gulp.task("default", ["copy-html"], bundle);
+gulp.task("spec", ["copy-html"], testBundle);
+
 watchedBrowserify.on("update", bundle);
 watchedBrowserify.on("log", gutil.log);
+
+watchedTestBrowserify.on("update", testBundle);
+watchedTestBrowserify.on("log", gutil.log);

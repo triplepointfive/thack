@@ -1,12 +1,13 @@
 {
   "name": "thack",
   "version": "0.0.1",
-  "description": "",
+  "description": "Rogue like game",
   "main": "dist/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "repository": "https://github.com/triplepointfive/thack",
+  "author": "Ilya Smelkov",
   "license": "MIT",
   "devDependencies": {
     "babelify": "^7.3.0",
@@ -16,6 +17,7 @@
     "gulp-typescript": "^2.13.6",
     "gulp-uglify": "^2.0.0",
     "gulp-util": "^3.0.7",
+    "jasmine-core": "2.4.1",
     "tsify": "^1.0.3",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",

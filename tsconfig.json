@@ -5,7 +5,9 @@
         "src/javascript/logger.ts",
         "src/javascript/generators/drawn.ts",
 
-        "src/1st.spec.ts"
+        "src/1st.spec.ts",
+
+        "typings/index.d.ts"
     ],
     "compilerOptions": {
         "noImplicitAny": true,

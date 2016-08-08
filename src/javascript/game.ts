@@ -22,7 +22,7 @@ class DisplayTile {
 export class Renderer {
   constructor( private display: any ) {  }
 
-  renderStage( stage: Stage, walker: any ): void {
+  renderStage( stage: Stage, walker: Walker ): void {
     const visionMask: Array< Array< boolean > > = walker.visionMask( stage )
 
     stage.field.forEach( ( row: Array< Type >, x: number ) => {

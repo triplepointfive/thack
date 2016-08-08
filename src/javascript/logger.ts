@@ -1,4 +1,4 @@
-let block: any = undefined
+let block: JQuery = undefined
 
 export class Logger {
   public static info( message: string ): void {
@@ -23,7 +23,7 @@ export class Logger {
     $( "tr.hidden" ).fadeIn()
   }
 
-  private static get(): any {
+  private static get(): JQuery {
     return block ? block : ( block = $( "#game-logs" ) )
   }
 }

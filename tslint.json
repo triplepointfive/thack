@@ -10,14 +10,9 @@
         "object-literal-sort-keys": true,
         "new-parens": true,
 
-
-
-
-
         "member-ordering": [true, { "order": "fields-first" }],
         "no-namespace": true,
         "no-reference": true,
-        "no-any": true,
         "no-duplicate-variable": true,
         "no-eval": true,
         "no-internal-module": true,

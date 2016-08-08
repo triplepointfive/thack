@@ -1,18 +1,18 @@
-import { MAX_X, MAX_Y, Rect } from "./javascript/utils";
-import { Walker, Renderer, Stage } from "./javascript/game";
+import { MAX_X, MAX_Y, Rect } from "./javascript/utils"
+import { Walker, Renderer, Stage } from "./javascript/game"
 
-import * as DrawnGenerator from "./javascript/generators/drawn";
-import * as DungeonGenerator from "./javascript/generators/dungeon";
+import * as DrawnGenerator from "./javascript/generators/drawn"
+import * as DungeonGenerator from "./javascript/generators/dungeon"
 
-$(function() {
+$( function(): void {
   if (!ROT.isSupported()) {
-    alert("The rot.js library isn't supported by your browser.");
+    alert("The rot.js library isn't supported by your browser.")
   } else {
     // Create a display 80 characters wide and 20 characters tall
-    const display = new ROT.Display({ width: MAX_X, height: MAX_Y })
+    const display = new ROT.Display({ height: MAX_Y, width: MAX_X })
 
     // Add the container to our HTML page
-    $('#game-screen').append( display.getContainer() )
+    $( "#game-screen" ).append( display.getContainer() )
 
     let stage = DungeonGenerator.generate( MAX_X, MAX_Y )
 
@@ -35,9 +35,9 @@ $(function() {
     //   ]
     // )
 
-    const freeSpot = function( stage: Stage ) {
-      for( let i = 0; i < stage.field.length; i++ ) {
-        for( let j = 0; j < stage.field[ i ].length; j++ ) {
+    const freeSpot = function( stage: Stage ): [ number, number ] {
+      for ( let i = 0; i < stage.field.length; i++ ) {
+        for ( let j = 0; j < stage.field[ i ].length; j++ ) {
           if ( !stage.field[ i ][ j ].tangible() ) {
             return [ i, j ]
           }
@@ -56,4 +56,4 @@ $(function() {
       walker.act( stage )
     }, 100 )
   }
-});
+})

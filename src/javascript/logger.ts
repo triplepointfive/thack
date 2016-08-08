@@ -1,16 +1,16 @@
-let block = undefined
+let block: any = undefined
 
 export class Logger {
   public static info( message: string ): void {
-    this.withClass( 'info', message );
+    this.withClass( "info", message )
   }
 
   public static warning( message: string ): void {
-    this.withClass( 'warning', message );
+    this.withClass( "warning", message )
   }
 
   public static danger( message: string ): void {
-    this.withClass( 'danger', message );
+    this.withClass( "danger", message )
   }
 
   private static withClass( classes: string, message: string ): void {
@@ -24,6 +24,6 @@ export class Logger {
   }
 
   private static get(): any {
-    return block ? block : ( block = $( "#game-logs" ) );
+    return block ? block : ( block = $( "#game-logs" ) )
   }
 }

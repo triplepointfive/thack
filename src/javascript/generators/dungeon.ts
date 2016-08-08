@@ -1,7 +1,7 @@
 import { Rect, Point, rand, min, max } from "../utils"
 import { Stage } from "../game"
 
-const THICKNESS = 0;
+const THICKNESS = 0
 
 export class Room extends Rect {
   notCross( rect: Rect ): boolean {
@@ -20,11 +20,11 @@ export class Room extends Rect {
 }
 
 export class Road extends Rect {
-  lined: boolean;
+  lined: boolean
 
   constructor( x: number, y: number, w: number, h: number ) {
-    super( x, y, w, h );
-    this.lined = ( ( x >= w ) && ( y >= h ) ) || ( w >= x ) && ( h >= y );
+    super( x, y, w, h )
+    this.lined = ( ( x >= w ) && ( y >= h ) ) || ( w >= x ) && ( h >= y )
   }
 
   horizontalLine(): [ number, number, number ] {
@@ -54,9 +54,9 @@ export class Road extends Rect {
   }
 }
 
-const MIN_SIZE: number = 4;
-const MAX_SIZE: number = 10;
-const ROOMS_COUNT: number = 25;
+const MIN_SIZE: number = 4
+const MAX_SIZE: number = 10
+const ROOMS_COUNT: number = 25
 
 export const generate = function ( dimX: number, dimY: number ): Stage {
   const dungeon = new DungeonGenerator( dimX, dimY )
@@ -69,24 +69,24 @@ export const generate = function ( dimX: number, dimY: number ): Stage {
   for ( let i = 0; i < dungeon.roads.length; i++ )
     stage.addRoad( dungeon.roads[ i ] )
 
-  return stage;
+  return stage
 }
 
 class DungeonGenerator {
-  rooms: Array< Room >;
-  roads: Array< Road >;
+  rooms: Array< Room >
+  roads: Array< Road >
 
   constructor( protected maxX: number, protected maxY: number ) {
     let rooms: Array< Room > = []
 
     let i = 0
     while ( i < ROOMS_COUNT ) {
-      rooms.push( this.generateRoom() );
+      rooms.push( this.generateRoom() )
       i += 1
     }
 
-    this.rooms = this.normalize( this.fuzzifyRooms( rooms ) );
-    this.roads = this.buildRoads( this.rooms );
+    this.rooms = this.normalize( this.fuzzifyRooms( rooms ) )
+    this.roads = this.buildRoads( this.rooms )
   }
 
   private generateRoom(): Room {
@@ -95,13 +95,13 @@ class DungeonGenerator {
       0,
       MIN_SIZE + rand( MAX_SIZE - MIN_SIZE ),
       MIN_SIZE + rand( MAX_SIZE - MIN_SIZE )
-    );
+    )
   }
 
   private fuzzifyRooms( rooms: Array< Room > ): Array< Room > {
-    let pickedRooms: Array< Room > = [ rooms.shift() ];
+    let pickedRooms: Array< Room > = [ rooms.shift() ]
 
-    while( rooms.length ) {
+    while ( rooms.length ) {
       let currentRoom: Room = rooms.shift()
 
       let angle: number = rand( 360 ) / 180 * Math.PI
@@ -114,49 +114,49 @@ class DungeonGenerator {
       let dy: number = 0
 
       while ( !pickedRooms.every( ( room ) => currentRoom.notCross( room ) )) {
-        let ndx = Math.round( l * cos );
-        let ndy = Math.round( l * sin );
+        let ndx = Math.round( l * cos )
+        let ndy = Math.round( l * sin )
 
         while ( true ) {
-          l += 1;
-          ndx = Math.round( l * cos );
-          ndy = Math.round( l * sin );
+          l += 1
+          ndx = Math.round( l * cos )
+          ndy = Math.round( l * sin )
 
-          if ( ndx != dx || ndy != dy ) {
-            break;
+          if ( ndx !== dx || ndy !== dy ) {
+            break
           }
         }
 
-        currentRoom.move( ndx - dx, ndy - dy );
-        dx = ndx;
-        dy = ndy;
+        currentRoom.move( ndx - dx, ndy - dy )
+        dx = ndx
+        dy = ndy
       }
 
-      pickedRooms.push( currentRoom );
+      pickedRooms.push( currentRoom )
     }
 
-    return pickedRooms;
+    return pickedRooms
   }
 
   private normalize( rooms: Array< Room > ): Array< Room > {
-    const minX = min( rooms.map( ( room ) => room.x ) ) - 1;
-    const minY = min( rooms.map( ( room ) => room.y ) ) - 1;
-    rooms.forEach( ( room ) => { room.move( - minX, - minY ) } );
+    const minX = min( rooms.map( ( room ) => room.x ) ) - 1
+    const minY = min( rooms.map( ( room ) => room.y ) ) - 1
+    rooms.forEach( ( room ) => { room.move( - minX, - minY ) } )
 
     return rooms.filter( ( room: Room ) => {
-      return ( room.x + room.w < this.maxX ) && ( room.y + room.h < this.maxY );
+      return ( room.x + room.w < this.maxX ) && ( room.y + room.h < this.maxY )
     })
   }
 
   private buildRoads( rooms: Array< Room > ): Array< Road > {
-    let points: Array< Point > = rooms.map( ( room ) => { return room.pointWithin() } );
+    let points: Array< Point > = rooms.map( ( room ) => { return room.pointWithin() } )
 
-    let connectedPoints: Array< Point > = [ points.shift() ];
-    let roads: Array< Road > = [];
+    let connectedPoints: Array< Point > = [ points.shift() ]
+    let roads: Array< Road > = []
 
     const distance = function( point1: Point, point2: Point ): number {
       // No need to calc square root since it's being used for comparison only.
-      return ( point1.x - point2.x ) ** 2 + ( point1.y - point2.y ) ** 2;
+      return ( point1.x - point2.x ) ** 2 + ( point1.y - point2.y ) ** 2
     }
 
     while ( points.length ) {
@@ -167,7 +167,7 @@ class DungeonGenerator {
 
       connectedPoints.forEach( ( point ) => {
         const currentDistance = distance( point, currentPoint )
-        if( currentDistance < minDistance ) {
+        if ( currentDistance < minDistance ) {
           pointToConnect = point
           minDistance = currentDistance
         }

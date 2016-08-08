@@ -60,10 +60,10 @@ export enum TileType {
 export class Type {
   public static get tileTypes(): { [ key: string ]: DisplayTile } {
     return {
-      [ TileType.wall ]:     new DisplayTile( "#", black, white, { visible: true,  tangible: true }  ),
-      [ TileType.space ]:    new DisplayTile( ".", white, black, { visible: true, tangible: false } ),
-      [ TileType.unknown ]:  new DisplayTile( " ", black, white, { visible: false, tangible: true }  ),
-      [ TileType.humanoid ]: new DisplayTile( "@", green, black, { visible: true,  tangible: true }  )
+      [ TileType.wall ]:     new DisplayTile( "#", black, white, { tangible: true, visible: true  }  ),
+      [ TileType.space ]:    new DisplayTile( ".", white, black, { tangible: false, visible: true   } ),
+      [ TileType.unknown ]:  new DisplayTile( " ", black, white, { tangible: true, visible: false }  ),
+      [ TileType.humanoid ]: new DisplayTile( "@", green, black, { tangible: true, visible: true  }  )
     }
   }
 

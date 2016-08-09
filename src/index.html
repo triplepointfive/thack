@@ -4,6 +4,37 @@
     <meta charset="UTF-8" />
     <title>Thack</title>
     <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js" integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8=" crossorigin="anonymous"></script>
+
+  <style>
+    #game-screen {
+      display: inline-block;
+    }
+    #logs-table {
+      display: inline-block;
+      vertical-align: top;
+      border-collapse: collapse;
+    }
+    #logs-table td,
+    #logs-table th {
+      padding: 3px;
+      /* Поля вокруг содержимого таблицы */
+      border: 1px solid black;
+      /* Параметры рамки */
+    }
+    #logs-table .info {
+      color: cyan;
+    }
+    #logs-table .warning {
+      color: orange;
+    }
+    #logs-table .danger {
+      color: red;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+
   </head>
   <body>
     <div id="game-screen"></div>

@@ -29,6 +29,7 @@ export const rand = function ( max: number ): number {
   return Math.floor( Math.random() * max )
 }
 
+/* tslint:disable no-any */
 export const twoDimArray = function ( dimX: number, dimY: number,
                                       value: ( x: number, y: number ) => any ): Array<Array<any>> {
   let field = Array( dimX )

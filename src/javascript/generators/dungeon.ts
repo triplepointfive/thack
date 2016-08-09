@@ -56,7 +56,7 @@ export class Road extends Rect {
 
 const MIN_SIZE: number = 4
 const MAX_SIZE: number = 10
-const ROOMS_COUNT: number = 25
+const ROOMS_COUNT: number = 50
 
 export const generate = function ( dimX: number, dimY: number ): Stage {
   const dungeon = new DungeonGenerator( dimX, dimY )

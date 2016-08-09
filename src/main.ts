@@ -54,6 +54,6 @@ $( function(): void {
       render.renderStage( stage, walker)
       render.renderTile(  walker.x, walker.y, walker.tile.printTile() )
       walker.act( stage )
-    }, 100 )
+    }, 50 )
   }
 })

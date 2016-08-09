@@ -11,6 +11,7 @@
         "new-parens": true,
 
         "member-ordering": [true, { "order": "fields-first" }],
+        "no-any": true,
         "no-namespace": true,
         "no-reference": true,
         "no-duplicate-variable": true,

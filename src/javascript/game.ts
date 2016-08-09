@@ -19,8 +19,12 @@ class DisplayTile {
   }
 }
 
+enum Effect {
+  Shaded
+}
+
 export class Renderer {
-  constructor( private display: any ) {  }
+  constructor( private display: ROT.Display ) {  }
 
   renderStage( stage: Stage, walker: Walker ): void {
     const visionMask: Array< Array< boolean > > = walker.visionMask( stage )
@@ -29,26 +33,39 @@ export class Renderer {
       row.forEach( ( tile: Type, y: number ) => {
         if ( visionMask[ x ][ y ] ) {
           this.renderTile( x, y, stage.at( x, y ).printTile() )
+        } else if ( walker.stageMemory[ x ][ y ].seen ) {
+          this.renderTile( x, y, stage.at( x, y ).printTile(), [ Effect.Shaded ] )
         }
       })
     })
   }
 
-  renderTile( x: number, y: number, tile: DisplayTile ): void {
-    const colors: string = this.buildColor( tile.foreground, tile.background )
+  renderTile( x: number, y: number, tile: DisplayTile, effects: Array< Effect > = [] ): void {
+    const colors: string = this.buildColor( tile.foreground, tile.background, effects )
     this.display.drawText( x, y, `${ colors }${ tile.char }` )
   }
 
-  buildColor( foreground: RGBColor, background: RGBColor ): string {
-    return `%c{${ ROT.Color.toRGB( foreground ) }}%b{${ ROT.Color.toRGB( background ) }}`
+  buildColor( foreground: RGBColor, background: RGBColor, effects: Array< Effect > ): string {
+    let fColor: RGBColor = foreground, bColor: RGBColor = background
+
+    if ( effects.indexOf( Effect.Shaded ) >= 0 ) {
+      const f = ( fColor[ 0 ] + fColor[ 1 ] + fColor[ 2 ] ) / 3
+      fColor = [ f, f, f ]
+
+      const b = ( bColor[ 0 ] + bColor[ 1 ] + bColor[ 2 ] ) / 3
+      bColor = [ b, b, b ]
+    }
+
+    return `%c{${ ROT.Color.toRGB( fColor ) }}%b{${ ROT.Color.toRGB( bColor ) }}`
   }
 }
 
-const white: RGBColor = [ 255, 255, 255 ]
-const black: RGBColor = [   0,   0,   0 ]
-const red:   RGBColor = [ 255,   0,   0 ]
-const green: RGBColor = [   0, 255,   0 ]
-const blue:  RGBColor = [   0,   0, 255 ]
+const white:  RGBColor = [ 255, 255, 255 ]
+const black:  RGBColor = [   0,   0,   0 ]
+const red:    RGBColor = [ 255,   0,   0 ]
+const green:  RGBColor = [   0, 255,   0 ]
+const blue:   RGBColor = [   0,   0, 255 ]
+const yellow: RGBColor = [ 150, 150,   0 ]
 
 export enum TileType {
   wall,
@@ -60,8 +77,8 @@ export enum TileType {
 export class Type {
   public static get tileTypes(): { [ key: string ]: DisplayTile } {
     return {
-      [ TileType.wall ]:     new DisplayTile( "#", black, white, { tangible: true, visible: true  }  ),
-      [ TileType.space ]:    new DisplayTile( ".", white, black, { tangible: false, visible: true   } ),
+      [ TileType.wall ]:     new DisplayTile( "#", yellow, yellow, { tangible: true, visible: true  }  ),
+      [ TileType.space ]:    new DisplayTile( ".", yellow, black, { tangible: false, visible: true   } ),
       [ TileType.unknown ]:  new DisplayTile( " ", black, white, { tangible: true, visible: false }  ),
       [ TileType.humanoid ]: new DisplayTile( "@", green, black, { tangible: true, visible: true  }  )
     }
@@ -167,7 +184,7 @@ class RandomWalking {
 class Patrol {
   i: NodeID
   step: number
-  graph: any
+  graph: graphlib.Graph
   lastNodeVisit: { [ key: string ]: number }
   currentNodeID: NodeID
   targetNodeID: NodeID
@@ -246,13 +263,90 @@ class Patrol {
   }
 }
 
+class TileRecall {
+  constructor( public seen: boolean, public tangible: boolean ) {}
+}
+
+const leePath = function( x0: number, y0: number, walker: Walker ): Array< Point > {
+  let stageMemory: Array< Array< number > > = twoDimArray( MAX_X, MAX_Y, () => { return undefined } )
+  let pointsToVisit: Array< Point > = []
+  let pointsToCheck: Array< Point > = [ { x: x0, y: y0 } ]
+
+  let step = 0
+  while ( pointsToCheck.length && !pointsToVisit.length ) {
+    // console.log(pointsToCheck )
+    let wavePoints: Array< Point > = []
+
+    pointsToCheck.forEach( ( point: Point ) => {
+      // TODO: Compare, current value might be lower
+      if ( walker.stageMemory[ point.x ][ point.y ].tangible ||
+          stageMemory[ point.x ][ point.y ] !== undefined ) {
+        return
+      }
+
+      stageMemory[ point.x ][ point.y ] = step
+
+      if ( walker.stageMemory[ point.x ][ point.y ].seen ) {
+        wavePoints.push( { x: point.x - 1, y: point.y })
+        wavePoints.push( { x: point.x + 1, y: point.y })
+        wavePoints.push( { x: point.x, y: point.y - 1 })
+        wavePoints.push( { x: point.x, y: point.y + 1 })
+        // wavePoints.push( { x: point.x - 1, y: point.y - 1 })
+        // wavePoints.push( { x: point.x + 1, y: point.y - 1 })
+        // wavePoints.push( { x: point.x + 1, y: point.y + 1 })
+        // wavePoints.push( { x: point.x - 1, y: point.y + 1 })
+      } else {
+        pointsToVisit.push( point )
+      }
+    })
+    step++
+
+    pointsToCheck = wavePoints
+  }
+
+  if ( pointsToVisit.length ) {
+    // pointsToVisit[ Math.floor( Math.random() * pointsToVisit.length ) ]
+    return buildRoad( pointsToVisit[ 0 ], stageMemory )
+  } else {
+    return []
+  }
+}
+
+const buildRoad = function ( point: Point, stageMemory: Array< Array< number > > ): Array< Point > {
+  let x0 = point.x, y0 = point.y
+  let chain = [ { x: x0, y: y0 } ]
+
+  let delta: Point = undefined
+
+  while ( stageMemory[ x0 ][ y0 ] !== 0 ) {
+
+    delta = [ { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 } ]
+      .find( ( dp ): boolean => {
+
+      return stageMemory[ x0 + dp.x ] &&
+        ( stageMemory[ x0 + dp.x ][ y0 + dp.y ] === stageMemory[ x0 ][ y0 ] - 1 )
+    })
+
+    x0 += delta.x
+    y0 += delta.y
+
+    chain.unshift( { x: x0, y: y0 } )
+  }
+
+  return chain
+}
+
+// TODO: Ensure seen is build before act() is called!
 export class Walker {
   tile: Type
+  stageMemory: Array< Array< TileRecall > >
+  path: Array< Point >
   private p1: RandomWalking
 
   constructor( public x: number, public y: number ) {
     this.tile = new Type( TileType.humanoid )
-    this.p1 = new RandomWalking( x, y )
+    // this.p1 = new RandomWalking( x, y )
+    this.stageMemory = twoDimArray( MAX_X, MAX_Y, () => { return new TileRecall( false, false ) } )
     // this.p1 = new Patrol( x, y )
     // this.p1.addNode( 1, 3 )
     // this.p1.addNode( 20, 3 )
@@ -260,16 +354,36 @@ export class Walker {
     // this.p1.addNode( 12, 7 )
     // this.p1.addNode( 12, 3 )
     // this.p1.currentNodeID = 'a'
+    this.path = []
   }
 
   act( stage: Stage ): void {
-    this.p1.act( stage, this )
-    this.x = this.p1.x
-    this.y = this.p1.y
+    if ( !this.path.length ) {
+      const somePath: Array< Point > = leePath( this.x, this.y, this )
+      if ( somePath.length ) {
+        this.path = somePath
+        this.act( stage )
+      }
+    } else {
+      const nextPoint = this.path.shift()
+      if ( stage.at( nextPoint.x, nextPoint.y ).tangible() ) {
+        this.path = []
+        this.act( stage )
+      } else {
+        this.x = nextPoint.x
+        this.y = nextPoint.y
+      }
+    }
   }
 
   visionMask( stage: Stage ): Array< Array< boolean> > {
     let mask = twoDimArray( MAX_X, MAX_Y, () => { return false } )
+
+    const see = ( x: number, y: number, tangible: boolean ): void => {
+      mask[ x ][ y ] = true
+      this.stageMemory[ x ][ y ].seen = true
+      this.stageMemory[ x ][ y ].tangible = tangible
+    }
 
     /* Los calculation */
     const los = ( x0: number,  y0: number,  x1: number,  y1: number ) => {
@@ -288,7 +402,7 @@ export class Walker {
 
       while (xnext !== x1 || ynext !== y1) {
         if ( stage.field[ xnext ][ ynext ].tangible() ) {
-          mask[ xnext ][ ynext ] = true
+          see( xnext, ynext, true )
           return
         }
 
@@ -302,7 +416,7 @@ export class Walker {
         }
       }
 
-      mask[ x1 ][ y1 ] = true
+      see( x1, y1, stage.field[ x1 ][ y1 ].tangible() )
     }
 
     const radius = 10

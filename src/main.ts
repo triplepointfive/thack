@@ -4,6 +4,7 @@ import { Walker } from "./javascript/creature/walker"
 
 import * as DrawnGenerator from "./javascript/generators/drawn"
 import * as DungeonGenerator from "./javascript/generators/dungeon"
+import * as MazeGenerator from "./javascript/generators/maze"
 
 $( function(): void {
   if (!ROT.isSupported()) {
@@ -15,7 +16,8 @@ $( function(): void {
     // Add the container to our HTML page
     $( "#game-screen" ).append( display.getContainer() )
 
-    let stage = DungeonGenerator.generate( MAX_X, MAX_Y )
+    // let stage = DungeonGenerator.generate( MAX_X, MAX_Y )
+    let stage = MazeGenerator.generate( MAX_X, MAX_Y )
 
     const render = new Renderer( display )
 

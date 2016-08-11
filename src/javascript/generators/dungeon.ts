@@ -1,9 +1,31 @@
 import { Rect, Point, rand, min, max } from "../utils"
-import { Stage } from "../game"
+import { Stage, Type, TileType } from "../game"
 
 const THICKNESS = 0
 
-export class Room extends Rect {
+const MIN_SIZE: number = 4
+const MAX_SIZE: number = 10
+const ROOMS_COUNT: number = 25
+
+const newSpace = function(): Type {
+  return new Type( TileType.space )
+}
+
+const generate = function ( dimX: number, dimY: number ): Stage {
+  const dungeon = new DungeonGenerator( dimX, dimY )
+
+  let stage = new Stage( dimX, dimY )
+
+  for ( let i = 0; i < dungeon.rooms.length; i++ )
+    dungeon.rooms[ i ].add( stage )
+
+  for ( let i = 0; i < dungeon.roads.length; i++ )
+    dungeon.roads[ i ].add( stage )
+
+  return stage
+}
+
+class Room extends Rect {
   notCross( rect: Rect ): boolean {
     return ( rect.x - THICKNESS > this.x + this.w ) ||
       ( rect.y - THICKNESS > this.y + this.h ) ||
@@ -17,14 +39,44 @@ export class Room extends Rect {
       y: this.y + 1 + rand( this.h - 1 )
     }
   }
+
+  add( stage: Stage ): void {
+    let i: number = 0
+    while ( i < this.w ) {
+      let j: number = 0
+      while ( j < this.h ) {
+        stage.field[ this.x + i ][ this.y + j ] = newSpace()
+        j++
+      }
+
+      i++
+    }
+  }
 }
 
-export class Road extends Rect {
+class Road extends Rect {
   lined: boolean
 
   constructor( x: number, y: number, w: number, h: number ) {
     super( x, y, w, h )
     this.lined = ( ( x >= w ) && ( y >= h ) ) || ( w >= x ) && ( h >= y )
+  }
+
+  add( stage: Stage ): void {
+    let [ hx, hy, w ] = this.horizontalLine()
+
+    let i = 0
+    while ( i < w ) {
+      stage.field[ hx + i ][ hy ] = newSpace()
+      i += 1
+    }
+
+    let [ vx, vy, h ] = this.verticallLine()
+    let j = 0
+    while ( j < h ) {
+      stage.field[ vx ][ vy + j ] = newSpace()
+      j += 1
+    }
   }
 
   horizontalLine(): [ number, number, number ] {
@@ -52,24 +104,6 @@ export class Road extends Rect {
     else
       return [ Math.min( this.x, this.w ), Math.min( this.y, this.h ), Math.abs( this.h - this.y ) ]
   }
-}
-
-const MIN_SIZE: number = 4
-const MAX_SIZE: number = 10
-const ROOMS_COUNT: number = 50
-
-export const generate = function ( dimX: number, dimY: number ): Stage {
-  const dungeon = new DungeonGenerator( dimX, dimY )
-
-  let stage = new Stage( dimX, dimY )
-
-  for ( let i = 0; i < dungeon.rooms.length; i++ )
-    stage.addRoom( dungeon.rooms[ i ] )
-
-  for ( let i = 0; i < dungeon.roads.length; i++ )
-    stage.addRoad( dungeon.roads[ i ] )
-
-  return stage
 }
 
 class DungeonGenerator {
@@ -186,3 +220,5 @@ class DungeonGenerator {
     return roads
   }
 }
+
+export { generate }

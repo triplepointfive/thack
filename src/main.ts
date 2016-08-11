@@ -1,5 +1,6 @@
 import { MAX_X, MAX_Y, Rect } from "./javascript/utils"
-import { Walker, Renderer, Stage } from "./javascript/game"
+import { Renderer, Stage } from "./javascript/game"
+import { Walker } from "./javascript/creature/walker"
 
 import * as DrawnGenerator from "./javascript/generators/drawn"
 import * as DungeonGenerator from "./javascript/generators/dungeon"
@@ -54,6 +55,6 @@ $( function(): void {
       render.renderStage( stage, walker)
       render.renderTile(  walker.x, walker.y, walker.tile.printTile() )
       walker.act( stage )
-    }, 50 )
+    }, 100 )
   }
 })

@@ -1,23 +1,26 @@
 {
     "files": [
         "src/main.ts",
-        "src/javascript/utils.ts",
+        "src/javascript/game.ts",
         "src/javascript/logger.ts",
-        "src/javascript/generators/drawn.ts",
+        "src/javascript/utils.ts",
 
-        "src/1st.spec.ts",
+        "src/javascript/creature/walker.ts",
+
+        "src/javascript/generators/drawn.ts",
+        "src/javascript/generators/dungeon.ts",
 
         "typings/index.d.ts"
     ],
     "compilerOptions": {
-        "noImplicitAny": true,
-        "target": "es2015",
-        "noImplicitAny": "true'",
+        "target": "es6",
+        "module": "commonjs",
         "sourceMap": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "removeComments": false,
-        "noImplicitAny": true,
-        "suppressImplicitAnyIndexErrors": true
+        "removeComments": true,
+        "noImplicitAny": false,
+        "suppressImplicitAnyIndexErrors": true,
+        "outDir": "dist"
     }
 }

@@ -15,9 +15,6 @@
  * @namespace Hold the functionalities related to graphlib library.
  */
 declare module graphlib {
-
-    var VERSION = '1.0.5-pre';
-
     interface GraphOptions {
         directed: boolean;
         compound: boolean;

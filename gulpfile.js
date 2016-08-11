@@ -1,62 +1,23 @@
 var gulp = require("gulp");
 var browserify = require("browserify");
 var source = require("vinyl-source-stream");
-var watchify = require("watchify");
 var tsify = require("tsify");
-var gutil = require("gulp-util");
-var paths = {
-  pages: ["src/*.html", "vendor/*.js"]
-};
-
-var watchedBrowserify = watchify(browserify({
-  basedir: ".",
-  debug: true,
-  entries: [
-    "src/main.ts",
-    "src/javascript/game.ts",
-    "src/javascript/utils.ts",
-    "src/javascript/logger.ts",
-    "src/javascript/generators/drawn.ts",
-    "src/javascript/generators/dungeon.ts"
-  ],
-  cache: {},
-  packageCache: {}
-}).plugin(tsify));
 
 gulp.task("copy-html", function () {
-  return gulp.src(paths.pages)
+  return gulp
+    .src( [ "src/*.html", "vendor/*.js" ] )
     .pipe(gulp.dest("dist"));
 });
 
-function bundle() {
-  return watchedBrowserify
-    .bundle()
-    .pipe(source("bundle.js"))
-    .pipe(gulp.dest("dist"));
-}
-
-var watchedTestBrowserify = watchify(browserify({
-  basedir: ".",
-  debug: true,
-  entries: [
-    "spec/1st.spec.ts"
-  ],
-  cache: {},
-  packageCache: {}
-}).plugin(tsify));
-
-function testBundle() {
-  return watchedTestBrowserify
-    .bundle()
-    .pipe(source("spec.js"))
-    .pipe(gulp.dest("dist"));
-}
-
-gulp.task("default", ["copy-html"], bundle);
-gulp.task("spec", ["copy-html"], testBundle);
-
-watchedBrowserify.on("update", bundle);
-watchedBrowserify.on("log", gutil.log);
-
-watchedTestBrowserify.on("update", testBundle);
-watchedTestBrowserify.on("log", gutil.log);
+gulp.task("default", ["copy-html"], function () {
+  return browserify({
+    basedir: ".",
+    debug: true,
+    entries: ["src/main.ts"],
+    cache: {},
+    packageCache: {}
+  }).plugin(tsify)
+  .bundle()
+  .pipe(source("bundle.js"))
+  .pipe(gulp.dest("dist"));
+});

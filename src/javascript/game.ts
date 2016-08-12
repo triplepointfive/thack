@@ -29,15 +29,19 @@ export class Renderer {
   renderStage( stage: Stage, walker: Walker ): void {
     const visionMask: Array< Array< boolean > > = walker.visionMask( stage )
 
-    stage.field.forEach( ( row: Array< Type >, x: number ) => {
-      row.forEach( ( tile: Type, y: number ) => {
-        if ( visionMask[ x ][ y ] ) {
-          this.renderTile( x, y, stage.at( x, y ).printTile() )
-        } else if ( walker.stageMemory[ x ][ y ].seen ) {
-          this.renderTile( x, y, stage.at( x, y ).printTile(), [ Effect.Shaded ] )
+    for ( let i = -walker.radius - 1; i <= walker.radius + 1; i++ ) {
+      for ( let j = -walker.radius - 1; j <= walker.radius + 1; j++ ) {
+        const x = walker.x + i,
+              y = walker.y + j
+        if ( x >= 0 && y >= 0 && x < stage.dimX && y < stage.dimY ) {
+          if ( visionMask[ x ][ y ] ) {
+            this.renderTile( x, y, stage.at( x, y ).printTile() )
+          } else if ( walker.stageMemory[ x ][ y ].seen ) {
+            this.renderTile( x, y, stage.at( x, y ).printTile(), [ Effect.Shaded ] )
+          }
         }
-      })
-    })
+      }
+    }
   }
 
   renderTile( x: number, y: number, tile: DisplayTile, effects: Array< Effect > = [] ): void {
@@ -102,7 +106,7 @@ const newWall = function(): Type {
 export class Stage {
   field: Array< Array< Type > >
 
-  constructor( dimX: number, dimY: number, baseBlock: ( () => Type ) = newWall ) {
+  constructor( public dimX: number, public dimY: number, baseBlock: ( () => Type ) = newWall ) {
     this.field = twoDimArray( dimX, dimY, baseBlock )
   }
 

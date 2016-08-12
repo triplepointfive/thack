@@ -16,8 +16,8 @@ $( function(): void {
     // Add the container to our HTML page
     $( "#game-screen" ).append( display.getContainer() )
 
-    // let stage = DungeonGenerator.generate( MAX_X, MAX_Y )
-    let stage = MazeGenerator.generate( MAX_X, MAX_Y )
+    let stage = DungeonGenerator.generate( MAX_X, MAX_Y )
+    // let stage = MazeGenerator.generate( MAX_X, MAX_Y )
 
     const render = new Renderer( display )
 
@@ -53,7 +53,7 @@ $( function(): void {
     let walker = new Walker( x, y )
 
     setInterval( () => {
-      display.clear()
+      // display.clear()
       render.renderStage( stage, walker)
       render.renderTile(  walker.x, walker.y, walker.tile.printTile() )
       walker.act( stage )

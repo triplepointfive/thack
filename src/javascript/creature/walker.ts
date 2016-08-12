@@ -1,82 +1,7 @@
 import { MAX_X, MAX_Y, Point, rand, succ, twoDimArray } from "../utils"
 import { Stage, Type, TileType } from "../game"
-
-class TileRecall {
-  constructor( public seen: boolean, public tangible: boolean ) {}
-}
-
-type NodeID = string
-
-const leePath = function( x0: number, y0: number, walker: Walker ): Array< Point > {
-  let stageMemory: Array< Array< number > > = twoDimArray( MAX_X, MAX_Y, () => { return undefined } )
-  let pointsToVisit: Array< Point > = []
-  let pointsToCheck: Array< Point > = [ { x: x0, y: y0 } ]
-
-  let step = 0
-  while ( pointsToCheck.length && !pointsToVisit.length ) {
-    // console.log(pointsToCheck )
-    let wavePoints: Array< Point > = []
-
-    pointsToCheck.forEach( ( point: Point ) => {
-      // TODO: Compare, current value might be lower
-      if ( walker.stageMemory[ point.x ][ point.y ].tangible ||
-          stageMemory[ point.x ][ point.y ] !== undefined ) {
-        return
-      }
-
-      stageMemory[ point.x ][ point.y ] = step
-
-      if ( walker.stageMemory[ point.x ][ point.y ].seen ) {
-        wavePoints.push( { x: point.x - 1, y: point.y })
-        wavePoints.push( { x: point.x + 1, y: point.y })
-        wavePoints.push( { x: point.x, y: point.y - 1 })
-        wavePoints.push( { x: point.x, y: point.y + 1 })
-        wavePoints.push( { x: point.x - 1, y: point.y - 1 })
-        wavePoints.push( { x: point.x + 1, y: point.y - 1 })
-        wavePoints.push( { x: point.x + 1, y: point.y + 1 })
-        wavePoints.push( { x: point.x - 1, y: point.y + 1 })
-      } else {
-        pointsToVisit.push( point )
-      }
-    })
-    step++
-
-    pointsToCheck = wavePoints
-  }
-
-  if ( pointsToVisit.length ) {
-    // pointsToVisit[ Math.floor( Math.random() * pointsToVisit.length ) ]
-    return buildRoad( pointsToVisit[ 0 ], stageMemory )
-  } else {
-    return []
-  }
-}
-
-const buildRoad = function ( point: Point, stageMemory: Array< Array< number > > ): Array< Point > {
-  let x0 = point.x, y0 = point.y
-  let chain = [ { x: x0, y: y0 } ]
-
-  let delta: Point = undefined
-
-  while ( stageMemory[ x0 ][ y0 ] !== 0 ) {
-
-    delta = [
-      { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 },
-      { x: -1, y: -1 }, { x: 1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: 1 }
-    ].find( ( dp ): boolean => {
-
-      return stageMemory[ x0 + dp.x ] &&
-        ( stageMemory[ x0 + dp.x ][ y0 + dp.y ] === stageMemory[ x0 ][ y0 ] - 1 )
-    })
-
-    x0 += delta.x
-    y0 += delta.y
-
-    chain.unshift( { x: x0, y: y0 } )
-  }
-
-  return chain
-}
+import { AI, TileRecall } from "../ai"
+import { Explorer } from "../ai/explorer.ts"
 
 class RandomWalking {
   direction: number
@@ -162,126 +87,22 @@ class RandomWalking {
   }
 }
 
-class Patrol {
-  i: NodeID
-  step: number
-  graph: graphlib.Graph
-  lastNodeVisit: { [ key: string ]: number }
-  currentNodeID: NodeID
-  targetNodeID: NodeID
-
-  constructor( public x: number, public y: number ) {
-    this.i = "a"
-
-    this.step = 0
-    this.graph = new graphlib.Graph()
-
-    this.addNode( this.x, this.y, false )
-    this.lastNodeVisit = {}
-
-    this.markNodeVisited( this.currentNodeID )
-  }
-
-  act(): void {
-    this.step += 1
-
-    if ( this.targetNodeID ) {
-      if ( this.reachedNode( this.targetNodeID ) ) {
-        this.currentNodeID = this.targetNodeID
-        this.markNodeVisited( this.currentNodeID )
-
-        this.pickUpNewTarget()
-      }
-    } else {
-      this.pickUpNewTarget()
-    }
-
-    this.moveToTarget()
-  }
-
-  moveToTarget(): void {
-    const pos: Point = this.graph.node( this.targetNodeID )
-    if ( pos.x !== this.x ) {
-      this.x += pos.x > this.x ? 1 : -1
-    } else if ( pos.y !== this.y ) {
-      this.y += pos.y > this.y ? 1 : -1
-    } else {
-      this.x += rand( 3 ) - 1
-      this.y += rand( 3 ) - 1
-    }
-  }
-
-  reachedNode( nodeID: NodeID ): boolean {
-    const pos: Point = this.graph.node( nodeID )
-    return ( pos.x === this.x ) && ( pos.y === this.y )
-  }
-
-  pickUpNewTarget(): void {
-    let seenLastID: NodeID = this.currentNodeID
-    let seenLastStep: number = this.lastNodeVisit[ seenLastID ]
-
-    this.graph.neighbors( this.currentNodeID ).forEach( ( nodeID: NodeID ) => {
-      if ( seenLastStep > ( this.lastNodeVisit[ nodeID ] || 0 ) )
-        seenLastID = nodeID
-        seenLastStep = this.lastNodeVisit[ seenLastID ]
-      }
-    )
-
-    this.targetNodeID = seenLastID
-  }
-
-  markNodeVisited( nodeID: NodeID ): void {
-    this.lastNodeVisit[ nodeID ] = this.step
-  }
-
-  addNode( x: number, y: number, withEdge: boolean = true ): void {
-    this.graph.setNode( this.i, { x: x, y: y } )
-    if ( withEdge ) {
-      this.graph.setEdge( this.currentNodeID, this.i )
-    }
-    this.currentNodeID = this.i
-    this.i = succ( this.i )
-  }
-}
-
 // TODO: Ensure seen is build before act() is called!
 export class Walker {
+  ai: AI
   tile: Type
   stageMemory: Array< Array< TileRecall > >
-  path: Array< Point >
-  private p1: RandomWalking
+  radius: number
 
   constructor( public x: number, public y: number ) {
     this.tile = new Type( TileType.humanoid )
-    // this.p1 = new RandomWalking( x, y )
     this.stageMemory = twoDimArray( MAX_X, MAX_Y, () => { return new TileRecall( false, false ) } )
-    // this.p1 = new Patrol( x, y )
-    // this.p1.addNode( 1, 3 )
-    // this.p1.addNode( 20, 3 )
-    // this.p1.addNode( 20, 7 )
-    // this.p1.addNode( 12, 7 )
-    // this.p1.addNode( 12, 3 )
-    // this.p1.currentNodeID = 'a'
-    this.path = []
+    this.radius = 10
+    this.ai = new Explorer()
   }
 
   act( stage: Stage ): void {
-    if ( !this.path.length ) {
-      const somePath: Array< Point > = leePath( this.x, this.y, this )
-      if ( somePath.length ) {
-        this.path = somePath
-        this.act( stage )
-      }
-    } else {
-      const nextPoint = this.path.shift()
-      if ( stage.at( nextPoint.x, nextPoint.y ).tangible() ) {
-        this.path = []
-        this.act( stage )
-      } else {
-        this.x = nextPoint.x
-        this.y = nextPoint.y
-      }
-    }
+    this.ai.act( this )
   }
 
   visionMask( stage: Stage ): Array< Array< boolean> > {
@@ -327,10 +148,9 @@ export class Walker {
       see( x1, y1, stage.field[ x1 ][ y1 ].tangible() )
     }
 
-    const radius = 10
-    for ( let i = -radius; i <= radius; i++ )
-      for ( let j = -radius; j <= radius; j++ )
-        if ( i * i + j * j < radius * radius )
+    for ( let i = -this.radius; i <= this.radius; i++ )
+      for ( let j = -this.radius; j <= this.radius; j++ )
+        if ( i * i + j * j < this.radius * this.radius )
           los( this.x, this.y, this.x + i, this.y + j )
 
     return mask

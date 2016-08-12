@@ -14,13 +14,14 @@ export class Logger {
   }
 
   private static withClass( classes: string, message: string ): void {
+    // `<tr class='hidden'>
     this.get().append(
-      `<tr class='hidden'>
+      `<tr>
         <td>${ moment().format( "hh:mm:ss" ) }</td>
         <td class='${ classes }'>${ message }</td>
         </tr>`
     )
-    $( "tr.hidden" ).fadeIn()
+    // $( "tr.hidden" ).fadeIn()
   }
 
   private static get(): JQuery {

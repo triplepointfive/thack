@@ -5,7 +5,7 @@ const THICKNESS = 0
 
 const MIN_SIZE: number = 4
 const MAX_SIZE: number = 10
-const ROOMS_COUNT: number = 25
+const ROOMS_COUNT: number = 20
 
 const newSpace = function(): Type {
   return new Type( TileType.space )

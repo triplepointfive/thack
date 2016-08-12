@@ -1,0 +1,4 @@
+node_modules
+ts-built
+dist
+typings/globals

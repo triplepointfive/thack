@@ -27,14 +27,12 @@ export class Renderer {
   constructor( private display: ROT.Display ) {  }
 
   renderStage( stage: Stage, walker: Walker ): void {
-    const visionMask: Array< Array< boolean > > = walker.visionMask( stage )
-
     for ( let i = -walker.radius - 1; i <= walker.radius + 1; i++ ) {
       for ( let j = -walker.radius - 1; j <= walker.radius + 1; j++ ) {
         const x = walker.x + i,
               y = walker.y + j
         if ( x >= 0 && y >= 0 && x < stage.dimX && y < stage.dimY ) {
-          if ( visionMask[ x ][ y ] ) {
+          if ( walker.stageMemory[ x ][ y ].visible ) {
             this.renderTile( x, y, stage.at( x, y ).printTile() )
           } else if ( walker.stageMemory[ x ][ y ].seen ) {
             this.renderTile( x, y, stage.at( x, y ).printTile(), [ Effect.Shaded ] )

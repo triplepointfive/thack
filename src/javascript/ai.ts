@@ -6,7 +6,11 @@ interface AI {
 }
 
 class TileRecall {
-  constructor( public seen: boolean, public tangible: boolean ) {}
+  visible: boolean
+
+  constructor( public seen: boolean, public tangible: boolean ) {
+    this.visible = false
+  }
 }
 
 const leePath = function ( walker: Walker,

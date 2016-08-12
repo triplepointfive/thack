@@ -18,14 +18,19 @@ export class Walker {
   }
 
   act( stage: Stage ): void {
+    this.visionMask( stage )
     this.ai.act( this )
   }
 
-  visionMask( stage: Stage ): Array< Array< boolean> > {
-    let mask = twoDimArray( MAX_X, MAX_Y, () => { return false } )
+  private visionMask( stage: Stage ): void {
+    this.stageMemory.forEach( ( row: Array< TileRecall > ) => {
+      row.forEach( ( tile: TileRecall ) => {
+        tile.visible = false
+      })
+    })
 
     const see = ( x: number, y: number, tangible: boolean ): void => {
-      mask[ x ][ y ] = true
+      this.stageMemory[ x ][ y ].visible = true
       this.stageMemory[ x ][ y ].seen = true
       this.stageMemory[ x ][ y ].tangible = tangible
     }
@@ -68,8 +73,6 @@ export class Walker {
       for ( let j = -this.radius; j <= this.radius; j++ )
         if ( i * i + j * j < this.radius * this.radius )
           los( this.x, this.y, this.x + i, this.y + j )
-
-    return mask
   }
 }
 

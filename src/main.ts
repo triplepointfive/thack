@@ -48,15 +48,36 @@ $( function(): void {
       }
     }
 
-    let [ x, y ] = freeSpot( stage )
+    const freeSpot2 = function( stage: Stage ): [ number, number ] {
+      for ( let i = stage.field.length - 1; i >= 0; i-- ) {
+        for ( let j = stage.field[ i ].length - 1; j >= 0; j-- ) {
+          if ( !stage.field[ i ][ j ].tangible() ) {
+            return [ i, j ]
+          }
+        }
+      }
+    }
+
+    let [ x, y ] = freeSpot( stage ),
+        [ x2, y2 ] = freeSpot2( stage )
 
     let walker = new Walker( x, y )
+    let walker2 = new Walker( x2, y2 )
 
     setInterval( () => {
+      console.log( walker.x, walker.y )
+      console.log( walker2.x, walker2.y )
       // display.clear()
-      render.renderStage( stage, walker)
+      render.renderStage( stage, walker )
+      render.renderStage( stage, walker2 )
+
       render.renderTile(  walker.x, walker.y, walker.tile.printTile() )
+      render.renderTile(  walker2.x, walker2.y, walker2.tile.printTile() )
       walker.act( stage )
+      walker2.act( stage )
+
     }, 100 )
+
+
   }
 })

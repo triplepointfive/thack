@@ -31,12 +31,12 @@ class Patrol implements AI {
       this.moveToTarget( walker )
     } else {
       if ( this.targetNodeID ) {
-        console.log( "Visit: ", this.targetNodeID )
         this.markNodeVisited( this.targetNodeID )
         this.currentNodeID = this.targetNodeID
       }
 
       this.pickUpNewTarget( walker )
+      this.moveToTarget( walker )
     }
     this.step += 1
   }
@@ -60,7 +60,6 @@ class Patrol implements AI {
   }
 
   private pickUpNewTarget( walker: Walker ): void {
-    console.log( this.graph )
     let seenLastID: NodeID = this.currentNodeID
     let seenLastStep: number = this.lastNodeVisit[ seenLastID ]
 

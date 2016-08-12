@@ -6,10 +6,16 @@ interface AI {
 }
 
 class TileRecall {
+  seen: boolean
+  tangible: boolean
   visible: boolean
+  updated: boolean
 
-  constructor( public seen: boolean, public tangible: boolean ) {
+  constructor() {
+    this.seen = false
+    this.tangible = false
     this.visible = false
+    this.updated = false
   }
 }
 

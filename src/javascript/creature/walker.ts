@@ -12,19 +12,24 @@ export class Walker {
 
   constructor( public x: number, public y: number ) {
     this.tile = new Type( TileType.humanoid )
-    this.stageMemory = twoDimArray( MAX_X, MAX_Y, () => { return new TileRecall( false, false ) } )
+    this.stageMemory = twoDimArray( MAX_X, MAX_Y, () => { return new TileRecall() } )
     this.radius = 10
     this.ai = new Explorer()
   }
 
   act( stage: Stage ): void {
+    this.stageMemory[ this.x ][ this.y ].updated = true
+
     this.visionMask( stage )
     this.ai.act( this )
+
+    this.stageMemory[ this.x ][ this.y ].updated = true
   }
 
   private visionMask( stage: Stage ): void {
     this.stageMemory.forEach( ( row: Array< TileRecall > ) => {
       row.forEach( ( tile: TileRecall ) => {
+        tile.updated = tile.visible
         tile.visible = false
       })
     })

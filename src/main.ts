@@ -65,8 +65,6 @@ $( function(): void {
     let walker2 = new Walker( x2, y2 )
 
     setInterval( () => {
-      console.log( walker.x, walker.y )
-      console.log( walker2.x, walker2.y )
       // display.clear()
       render.renderStage( stage, walker )
       render.renderStage( stage, walker2 )
@@ -77,7 +75,5 @@ $( function(): void {
       walker2.act( stage )
 
     }, 100 )
-
-
   }
 })

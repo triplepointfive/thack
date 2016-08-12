@@ -1,5 +1,6 @@
 import { twoDimArray } from "./utils"
 import { Walker } from "./creature/walker"
+import { TileRecall } from "./ai"
 
 type RGBColor = [ number, number, number ]
 
@@ -27,19 +28,17 @@ export class Renderer {
   constructor( private display: ROT.Display ) {  }
 
   renderStage( stage: Stage, walker: Walker ): void {
-    for ( let i = -walker.radius - 1; i <= walker.radius + 1; i++ ) {
-      for ( let j = -walker.radius - 1; j <= walker.radius + 1; j++ ) {
-        const x = walker.x + i,
-              y = walker.y + j
-        if ( x >= 0 && y >= 0 && x < stage.dimX && y < stage.dimY ) {
-          if ( walker.stageMemory[ x ][ y ].visible ) {
+    walker.stageMemory.forEach( ( row: Array< TileRecall >, x: number ) => {
+      row.forEach( ( tile: TileRecall, y: number ) => {
+        if ( tile.updated ) {
+          if ( tile.visible ) {
             this.renderTile( x, y, stage.at( x, y ).printTile() )
-          } else if ( walker.stageMemory[ x ][ y ].seen ) {
+          } else if ( tile.seen ) {
             this.renderTile( x, y, stage.at( x, y ).printTile(), [ Effect.Shaded ] )
           }
         }
-      }
-    }
+      })
+    })
   }
 
   renderTile( x: number, y: number, tile: DisplayTile, effects: Array< Effect > = [] ): void {
